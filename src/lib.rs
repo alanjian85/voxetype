@@ -1,43 +1,53 @@
-use std::io::{self, Write};
-use termion::{color, cursor};
+use std::{
+    error::Error,
+    io::{self, Read, Write},
+    thread,
+    time::Duration,
+};
+use termion::{color, cursor, raw::IntoRawMode};
 
-pub struct Framebuffer {
-    width: usize,
-    height: usize,
-    pixels: Vec<Pixel>,
-}
+pub mod framebuffer;
 
-#[derive(Clone)]
-pub struct Pixel(pub char, pub color::Rgb);
+pub use framebuffer::{Framebuffer, Pixel};
 
-impl Framebuffer {
-    pub fn new(width: usize, height: usize) -> Self {
-        let pixels = vec![Pixel(' ', color::Rgb(0, 0, 0)); width * height];
-        Self {
-            width,
-            height,
-            pixels,
-        }
-    }
+pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
+    let mut stdout = io::stdout()
+        .lock()
+        .into_raw_mode()
+        .expect("unable to switch stdout to raw mode");
+    let mut stdin = termion::async_stdin();
+    write!(stdout, "{}", cursor::Hide)?;
 
-    pub fn write(&mut self, x: usize, y: usize, pixel: Pixel) {
-        let idx = y * self.width + x;
-        self.pixels[idx] = pixel;
-    }
-
-    pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
-        write!(stdout, "{}", cursor::Goto(1, 1))?;
-
-        for (y, line) in self.pixels.chunks_exact(self.width).enumerate() {
-            for pixel in line {
-                write!(stdout, "{}{}", color::Fg(pixel.1), pixel.0)?;
-            }
-
-            if y < self.height - 1 {
-                write!(stdout, "\r\n")?;
+    let mut framebuffer = Framebuffer::new(width, height);
+    let mut time = 0.0;
+    'game_loop: loop {
+        for c in stdin.by_ref().bytes() {
+            if c? == b'q' {
+                break 'game_loop Ok(());
             }
         }
 
-        Ok(())
+        for y in 0..height {
+            for x in 0..width {
+                let u = x as f64 / (width - 1) as f64;
+                let v = y as f64 / (height - 1) as f64;
+
+                let r = (time + u + 0.0).cos() * 0.5 + 0.5;
+                let g = (time + v + 2.0).cos() * 0.5 + 0.5;
+                let b = (time + u + 4.0).cos() * 0.5 + 0.5;
+
+                let r = (r * 256.0).clamp(0.0, 255.0) as u8;
+                let g = (g * 256.0).clamp(0.0, 255.0) as u8;
+                let b = (b * 256.0).clamp(0.0, 255.0) as u8;
+
+                framebuffer.write(x, y, Pixel('█', color::Rgb(r, g, b)));
+            }
+        }
+
+        framebuffer.present(&mut stdout)?;
+        stdout.flush()?;
+
+        time += 0.016;
+        thread::sleep(Duration::from_millis(16));
     }
 }
