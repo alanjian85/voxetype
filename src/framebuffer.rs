@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use termion::{color, cursor};
+use termion::color;
 
 pub struct Framebuffer {
     width: usize,
@@ -7,7 +7,7 @@ pub struct Framebuffer {
     pixels: Vec<Pixel>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Pixel(pub char, pub color::Rgb);
 
 impl Framebuffer {
@@ -20,14 +20,16 @@ impl Framebuffer {
         }
     }
 
+    pub fn fill(&mut self, pixel: Pixel) {
+        self.pixels.fill(pixel);
+    }
+
     pub fn write(&mut self, x: usize, y: usize, pixel: Pixel) {
         let idx = y * self.width + x;
         self.pixels[idx] = pixel;
     }
 
     pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
-        write!(stdout, "{}", cursor::Goto(1, 1))?;
-
         for (y, line) in self.pixels.chunks_exact(self.width).enumerate() {
             for pixel in line {
                 write!(stdout, "{}{}", color::Fg(pixel.1), pixel.0)?;
