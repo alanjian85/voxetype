@@ -45,8 +45,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
             (vertices[2], vertices[0]),
         ];
         for (a, b) in lines {
-            let c = select_char(a, b);
-            renderer.draw_line(a, b, Pixel(c, color::Rgb(255, 255, 255)));
+            renderer.draw_line(a, b, Pixel::new('*', color::Rgb(255, 255, 255)));
         }
 
         write!(stdout, "{}", cursor::Goto(1, 1))?;
@@ -61,14 +60,4 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 fn rotate((x, y): (f64, f64), theta: f64) -> (f64, f64) {
     let (sin, cos) = theta.sin_cos();
     (cos * x - sin * y, sin * x + cos * y)
-}
-
-fn select_char(a: (f64, f64), b: (f64, f64)) -> char {
-    let theta = f64::consts::PI / 8.0;
-    match (b.1 - a.1).atan2(b.0 - a.0) / theta {
-        1.0..=3.0 | -7.0..=-5.0 => '/',
-        3.0..=5.0 | -5.0..=-3.0 => '‖',
-        5.0..=7.0 | -3.0..=-1.0 => '\\',
-        _ => '=',
-    }
 }

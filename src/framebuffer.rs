@@ -7,12 +7,9 @@ pub struct Framebuffer {
     pixels: Vec<Pixel>,
 }
 
-#[derive(Clone, Copy)]
-pub struct Pixel(pub char, pub color::Rgb);
-
 impl Framebuffer {
     pub fn new(width: usize, height: usize) -> Self {
-        let pixels = vec![Pixel(' ', color::Rgb(0, 0, 0)); width * height];
+        let pixels = vec![Pixel::new(' ', color::Rgb(0, 0, 0)); width * height];
         Self {
             width,
             height,
@@ -40,7 +37,7 @@ impl Framebuffer {
     pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
         for (y, line) in self.pixels.chunks_exact(self.width).enumerate() {
             for pixel in line {
-                write!(stdout, "{}{}", color::Fg(pixel.1), pixel.0)?;
+                write!(stdout, "{}{}", color::Fg(pixel.color), pixel.symbol)?;
             }
 
             if y < self.height - 1 {
@@ -49,5 +46,17 @@ impl Framebuffer {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Pixel {
+    pub symbol: char,
+    pub color: color::Rgb,
+}
+
+impl Pixel {
+    pub fn new(symbol: char, color: color::Rgb) -> Self {
+        Self { symbol, color }
     }
 }

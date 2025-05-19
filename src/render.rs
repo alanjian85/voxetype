@@ -11,7 +11,7 @@ impl Renderer {
     pub fn new(framebuffer: Framebuffer) -> Self {
         Self {
             framebuffer,
-            clear_value: Pixel(' ', color::Rgb(0, 0, 0)),
+            clear_value: Pixel::new(' ', color::Rgb(0, 0, 0)),
         }
     }
 
