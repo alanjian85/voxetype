@@ -35,22 +35,15 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         let vertices = [(0.0, 0.57), (-0.5, -0.29), (0.5, -0.29)].map(|vertex| {
             let (x, y) = rotate(vertex, time);
             let x = x / (width as f64 / height as f64) * 2.0;
-
-            let x = ((x * 0.5 + 0.5) * width as f64).round();
-            let y = ((-y * 0.5 + 0.5) * height as f64).round();
-
             (x, y)
         });
 
-        for &(x, y) in &vertices {
-            if !(0.0..width as f64).contains(&x) || !(0.0..height as f64).contains(&y) {
-                continue;
-            }
-
-            renderer.draw_point(
-                (x as usize, y as usize),
-                Pixel('.', color::Rgb(255, 255, 255)),
-            );
+        let line_pixel = Pixel('*', color::Rgb(255, 255, 255));
+        renderer.draw_line(vertices[0], vertices[1], line_pixel);
+        renderer.draw_line(vertices[1], vertices[2], line_pixel);
+        renderer.draw_line(vertices[2], vertices[0], line_pixel);
+        for &vertex in &vertices {
+            renderer.draw_point(vertex, Pixel('.', color::Rgb(255, 255, 255)));
         }
 
         write!(stdout, "{}", cursor::Goto(1, 1))?;
