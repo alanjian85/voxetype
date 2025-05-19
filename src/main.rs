@@ -1,10 +1,10 @@
 use std::{
     error::Error,
-    io::{self, Write},
+    io::{self, Read, Write},
     thread,
     time::Duration,
 };
-use termion::{color, cursor};
+use termion::{color, cursor, raw::IntoRawMode};
 
 fn main() {
     let (width, height) = termion::terminal_size().expect("unable to fetch the terminal size");
@@ -15,11 +15,22 @@ fn main() {
 }
 
 fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
-    print!("{}", cursor::Hide);
+    let mut stdout = io::stdout()
+        .lock()
+        .into_raw_mode()
+        .expect("unable to switch stdout to raw mode");
+    let mut stdin = termion::async_stdin();
+    write!(stdout, "{}", cursor::Hide)?;
 
     let mut time = 0.0;
-    loop {
-        print!("{}", cursor::Goto(1, 1));
+    'game_loop: loop {
+        for c in stdin.by_ref().bytes() {
+            if c? == b'q' {
+                break 'game_loop Ok(());
+            }
+        }
+
+        write!(stdout, "{}", cursor::Goto(1, 1))?;
         for y in 0..height {
             for x in 0..width {
                 let u = x as f64 / (width - 1) as f64;
@@ -33,14 +44,14 @@ fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
                 let g = (g * 256.0).clamp(0.0, 255.0) as u8;
                 let b = (b * 256.0).clamp(0.0, 255.0) as u8;
 
-                print!("{}█", color::Fg(color::Rgb(r, g, b)));
+                write!(stdout, "{}█", color::Fg(color::Rgb(r, g, b)))?;
             }
 
             if y != height - 1 {
-                println!();
+                write!(stdout, "\r\n")?;
             }
         }
-        io::stdout().flush()?;
+        stdout.flush()?;
 
         time += 0.016;
         thread::sleep(Duration::from_millis(16));
