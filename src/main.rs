@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 use termion::{color, cursor, raw::IntoRawMode};
+use voxetype::{Framebuffer, Pixel};
 
 fn main() {
     let (width, height) = termion::terminal_size().expect("unable to fetch the terminal size");
@@ -22,6 +23,7 @@ fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     let mut stdin = termion::async_stdin();
     write!(stdout, "{}", cursor::Hide)?;
 
+    let mut framebuffer = Framebuffer::new(width, height);
     let mut time = 0.0;
     'game_loop: loop {
         for c in stdin.by_ref().bytes() {
@@ -30,7 +32,6 @@ fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
             }
         }
 
-        write!(stdout, "{}", cursor::Goto(1, 1))?;
         for y in 0..height {
             for x in 0..width {
                 let u = x as f64 / (width - 1) as f64;
@@ -44,13 +45,11 @@ fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
                 let g = (g * 256.0).clamp(0.0, 255.0) as u8;
                 let b = (b * 256.0).clamp(0.0, 255.0) as u8;
 
-                write!(stdout, "{}█", color::Fg(color::Rgb(r, g, b)))?;
-            }
-
-            if y != height - 1 {
-                write!(stdout, "\r\n")?;
+                framebuffer.write(x, y, Pixel('█', color::Rgb(r, g, b)));
             }
         }
+
+        framebuffer.present(&mut stdout)?;
         stdout.flush()?;
 
         time += 0.016;
