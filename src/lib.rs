@@ -1,3 +1,4 @@
+use glam::DVec2;
 use std::{
     error::Error,
     f64,
@@ -33,16 +34,21 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
         renderer.clear();
 
-        let vertices = [(0.0, 0.57), (-0.5, -0.29), (0.5, -0.29)].map(|vertex| {
-            let (x, y) = rotate(vertex, time);
-            let x = x / (width as f64 / height as f64) * 2.0;
-            (x, y)
+        let vertices_pos = [
+            DVec2::new(0.0, 0.57),
+            DVec2::new(-0.5, -0.29),
+            DVec2::new(0.5, -0.29),
+        ]
+        .map(|pos| {
+            let mut pos = rotate(pos, time);
+            pos.x /= (width as f64 / height as f64) * 0.5;
+            pos
         });
 
         let lines = [
-            (vertices[0], vertices[1]),
-            (vertices[1], vertices[2]),
-            (vertices[2], vertices[0]),
+            (vertices_pos[0], vertices_pos[1]),
+            (vertices_pos[1], vertices_pos[2]),
+            (vertices_pos[2], vertices_pos[0]),
         ];
         for (a, b) in lines {
             renderer.draw_line(a, b, Pixel::new('*', color::Rgb(255, 255, 255)));
@@ -57,7 +63,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn rotate((x, y): (f64, f64), theta: f64) -> (f64, f64) {
+fn rotate(pos: DVec2, theta: f64) -> DVec2 {
     let (sin, cos) = theta.sin_cos();
-    (cos * x - sin * y, sin * x + cos * y)
+    DVec2::new(cos * pos.x - sin * pos.y, sin * pos.x + cos * pos.y)
 }

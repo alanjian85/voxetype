@@ -1,4 +1,5 @@
 use crate::framebuffer::{Framebuffer, Pixel};
+use glam::{f64::DVec2, i32::IVec2};
 use std::io::{self, Write};
 use termion::color;
 
@@ -19,44 +20,46 @@ impl Renderer {
         self.framebuffer.fill(self.clear_value);
     }
 
-    pub fn draw_point(&mut self, pos: (f64, f64), pixel: Pixel) {
+    pub fn draw_point(&mut self, pos: DVec2, pixel: Pixel) {
+        let pos = self.screen_to_viewport(pos);
+
         let width = self.framebuffer.width() as i32;
         let height = self.framebuffer.height() as i32;
-
-        let (x, y) = self.screen_to_viewport(pos);
-        if !(0..width).contains(&x) || !(0..height).contains(&y) {
+        if !(0..width).contains(&pos.x) || !(0..height).contains(&pos.y) {
             return;
         }
 
-        self.framebuffer.write(x as usize, y as usize, pixel);
+        self.framebuffer
+            .write(pos.x as usize, pos.y as usize, pixel);
     }
 
-    pub fn draw_line(&mut self, a: (f64, f64), b: (f64, f64), pixel: Pixel) {
-        let a = self.clip(self.screen_to_viewport(a));
-        let b = self.clip(self.screen_to_viewport(b));
+    pub fn draw_line(&mut self, a: DVec2, b: DVec2, pixel: Pixel) {
+        let a = self.viewport_clip(self.screen_to_viewport(a));
+        let b = self.viewport_clip(self.screen_to_viewport(b));
 
-        let dx = (a.0 - b.0).abs();
-        let dy = -(a.1 - b.1).abs();
-        let sx = if a.0 < b.0 { 1 } else { -1 };
-        let sy = if a.1 < b.1 { 1 } else { -1 };
+        let dx = (a.x - b.x).abs();
+        let dy = -(a.y - b.y).abs();
+        let sx = if a.x < b.x { 1 } else { -1 };
+        let sy = if a.y < b.y { 1 } else { -1 };
 
-        let (mut x, mut y) = a;
+        let mut pos = a;
         let mut err = dx + dy;
 
         loop {
-            self.framebuffer.write(x as usize, y as usize, pixel);
-            if (x, y) == b {
+            self.framebuffer
+                .write(pos.x as usize, pos.y as usize, pixel);
+            if pos == b {
                 break;
             }
 
             let err2 = err * 2;
             if err2 >= dy {
                 err += dy;
-                x += sx;
+                pos.x += sx;
             }
             if err2 <= dx {
                 err += dx;
-                y += sy;
+                pos.y += sy;
             }
         }
     }
@@ -65,15 +68,23 @@ impl Renderer {
         self.framebuffer.present(stdout)
     }
 
-    fn screen_to_viewport(&self, (x, y): (f64, f64)) -> (i32, i32) {
-        let x = ((x * 0.5 + 0.5) * self.framebuffer.width() as f64).round() as i32;
-        let y = ((-y * 0.5 + 0.5) * self.framebuffer.height() as f64).round() as i32;
-        (x, y)
+    fn screen_to_viewport(&self, v: DVec2) -> IVec2 {
+        ((v * DVec2::new(0.5, -0.5) + 0.5)
+            * DVec2::new(
+                self.framebuffer.width() as f64,
+                self.framebuffer.height() as f64,
+            )
+            .round())
+        .as_ivec2()
     }
 
-    fn clip(&self, (x, y): (i32, i32)) -> (i32, i32) {
-        let x = x.clamp(0, (self.framebuffer.width() - 1) as i32);
-        let y = y.clamp(0, (self.framebuffer.height() - 1) as i32);
-        (x, y)
+    fn viewport_clip(&self, v: IVec2) -> IVec2 {
+        v.clamp(
+            IVec2::new(0, 0),
+            IVec2::new(
+                (self.framebuffer.width() - 1) as i32,
+                (self.framebuffer.height() - 1) as i32,
+            ),
+        )
     }
 }
