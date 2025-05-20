@@ -52,14 +52,28 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         let transformed_vertices =
             VERTICES.map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
 
-        for (i, &(a, b, c)) in TRIANGLES.iter().enumerate() {
+        let normals = [
+            DVec3::new(0.0, 0.0, 1.0),
+            DVec3::new(1.0, 0.0, 0.0),
+            DVec3::new(0.0, 1.0, 0.0),
+            DVec3::new(0.0, -1.0, 0.0),
+            DVec3::new(-1.0, 0.0, 0.0),
+            DVec3::new(0.0, 0.0, -1.0),
+        ];
+
+        for (i, &(vert_a, vert_b, vert_c)) in TRIANGLES.iter().enumerate() {
+            let normal = normals[i / 2];
+            let r = ((normal.x * 0.5 + 0.5) * 255.0).round() as u8;
+            let g = ((normal.y * 0.5 + 0.5) * 255.0).round() as u8;
+            let b = ((normal.z * 0.5 + 0.5) * 255.0).round() as u8;
+
             renderer.draw_triangle(
-                transformed_vertices[a].xy(),
-                transformed_vertices[b].xy(),
-                transformed_vertices[c].xy(),
+                transformed_vertices[vert_a].xy(),
+                transformed_vertices[vert_b].xy(),
+                transformed_vertices[vert_c].xy(),
                 Pixel::new(
-                    char::from_digit(i as u32 / 2, 10).unwrap(),
-                    color::Rgb(255, 255, 255),
+                    char::from_digit(i as u32 / 2 + 1, 10).unwrap(),
+                    color::Rgb(r, g, b),
                 ),
             );
         }
