@@ -30,8 +30,8 @@ impl Renderer {
     }
 
     pub fn draw_line(&mut self, a: DVec2, b: DVec2, pixel: Pixel) {
-        let a = self.viewport_clip(self.screen_to_viewport(a));
-        let b = self.viewport_clip(self.screen_to_viewport(b));
+        let a = self.screen_to_viewport(a);
+        let b = self.screen_to_viewport(b);
 
         let dx = (a.x - b.x).abs();
         let dy = -(a.y - b.y).abs();
@@ -61,9 +61,9 @@ impl Renderer {
     }
 
     pub fn draw_triangle(&mut self, a: DVec2, b: DVec2, c: DVec2, pixel: Pixel) {
-        let a = self.viewport_clip(self.screen_to_viewport(a));
-        let b = self.viewport_clip(self.screen_to_viewport(b));
-        let c = self.viewport_clip(self.screen_to_viewport(c));
+        let a = self.screen_to_viewport(a);
+        let b = self.screen_to_viewport(b);
+        let c = self.screen_to_viewport(c);
 
         let min = a.min(b).min(c);
         let max = a.max(b).max(c);
@@ -97,20 +97,10 @@ impl Renderer {
     fn screen_to_viewport(&self, v: DVec2) -> IVec2 {
         ((v * DVec2::new(0.5, -0.5) + 0.5)
             * DVec2::new(
-                self.framebuffer.width() as f64,
-                self.framebuffer.height() as f64,
+                (self.framebuffer.width() - 1) as f64,
+                (self.framebuffer.height() - 1) as f64,
             )
             .round())
         .as_ivec2()
-    }
-
-    fn viewport_clip(&self, v: IVec2) -> IVec2 {
-        v.clamp(
-            IVec2::new(0, 0),
-            IVec2::new(
-                (self.framebuffer.width() - 1) as i32,
-                (self.framebuffer.height() - 1) as i32,
-            ),
-        )
     }
 }
