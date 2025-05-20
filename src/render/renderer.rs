@@ -1,23 +1,31 @@
 use crate::framebuffer::{Framebuffer, Pixel};
-use glam::{f64::DVec2, i32::IVec2};
+use glam::{DMat4, DVec3, Vec3Swizzles, f64::DVec2, i32::IVec2};
 use std::io::{self, Write};
 use termion::color;
 
 pub struct Renderer {
     framebuffer: Framebuffer,
+    transform_mat: DMat4,
 }
 
 impl Renderer {
     pub fn new(framebuffer: Framebuffer) -> Self {
-        Self { framebuffer }
+        Self {
+            framebuffer,
+            transform_mat: DMat4::IDENTITY,
+        }
     }
 
     pub fn clear(&mut self) {
         self.framebuffer.fill(Pixel::new(' ', color::Rgb(0, 0, 0)));
     }
 
-    pub fn draw_point(&mut self, pos: DVec2, pixel: Pixel) {
-        let pos = self.screen_to_viewport(pos);
+    pub fn set_transform_mat(&mut self, transform_mat: DMat4) {
+        self.transform_mat = transform_mat;
+    }
+
+    pub fn draw_point(&mut self, pos: DVec3, pixel: Pixel) {
+        let pos = self.screen_to_viewport(self.transform_mat.project_point3(pos).xy());
 
         let width = self.framebuffer.width() as i32;
         let height = self.framebuffer.height() as i32;
@@ -29,9 +37,9 @@ impl Renderer {
             .write(pos.x as usize, pos.y as usize, pixel);
     }
 
-    pub fn draw_line(&mut self, a: DVec2, b: DVec2, pixel: Pixel) {
-        let a = self.screen_to_viewport(a);
-        let b = self.screen_to_viewport(b);
+    pub fn draw_line(&mut self, a: DVec3, b: DVec3, pixel: Pixel) {
+        let a = self.screen_to_viewport(self.transform_mat.project_point3(a).xy());
+        let b = self.screen_to_viewport(self.transform_mat.project_point3(b).xy());
 
         let dx = (a.x - b.x).abs();
         let dy = -(a.y - b.y).abs();
@@ -60,10 +68,10 @@ impl Renderer {
         }
     }
 
-    pub fn draw_triangle(&mut self, a: DVec2, b: DVec2, c: DVec2, pixel: Pixel) {
-        let a = self.screen_to_viewport(a);
-        let b = self.screen_to_viewport(b);
-        let c = self.screen_to_viewport(c);
+    pub fn draw_triangle(&mut self, a: DVec3, b: DVec3, c: DVec3, pixel: Pixel) {
+        let a = self.screen_to_viewport(self.transform_mat.project_point3(a).xy());
+        let b = self.screen_to_viewport(self.transform_mat.project_point3(b).xy());
+        let c = self.screen_to_viewport(self.transform_mat.project_point3(c).xy());
 
         let min = a.min(b).min(c);
         let max = a.max(b).max(c);

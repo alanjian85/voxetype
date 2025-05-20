@@ -1,4 +1,4 @@
-use glam::{DMat4, DVec2, DVec3, Vec3Swizzles};
+use glam::{DMat4, DVec3};
 use std::{
     error::Error,
     f64,
@@ -49,8 +49,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
         let time = start_time.elapsed().as_secs_f64();
         let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), time);
-        let transformed_vertices =
-            VERTICES.map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
+        renderer.set_transform_mat(proj_mat * view_mat * model_mat);
 
         let normals = [
             DVec3::new(0.0, 0.0, 1.0),
@@ -68,9 +67,9 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
             let b = ((normal.z * 0.5 + 0.5) * 255.0).round() as u8;
 
             renderer.draw_triangle(
-                transformed_vertices[vert_a].xy(),
-                transformed_vertices[vert_b].xy(),
-                transformed_vertices[vert_c].xy(),
+                VERTICES[vert_a],
+                VERTICES[vert_b],
+                VERTICES[vert_c],
                 Pixel::new(
                     char::from_digit(i as u32 / 2 + 1, 10).unwrap(),
                     color::Rgb(r, g, b),
@@ -80,8 +79,8 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
         for (a, b) in LINES {
             renderer.draw_line(
-                transformed_vertices[a].xy(),
-                transformed_vertices[b].xy(),
+                VERTICES[a],
+                VERTICES[b],
                 Pixel::new('*', color::Rgb(255, 255, 255)),
             );
         }
