@@ -1,4 +1,4 @@
-use glam::DVec2;
+use glam::{DMat4, DVec2, DVec3, Vec3Swizzles};
 use std::{
     error::Error,
     f64,
@@ -14,6 +14,9 @@ pub mod render;
 pub use framebuffer::{Framebuffer, Pixel};
 pub use render::Renderer;
 
+const FULL_BLOCK_WIDTH: usize = 10;
+const FULL_BLOCK_HEIGHT: usize = 22;
+
 pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     let mut stdout = io::stdout()
         .lock()
@@ -21,6 +24,14 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         .expect("unable to switch stdout to raw mode");
     let mut stdin = termion::async_stdin();
     write!(stdout, "{}", cursor::Hide)?;
+
+    let view_mat = DMat4::look_to_rh(
+        DVec3::new(0.0, 0.0, 0.0),
+        DVec3::new(0.0, 0.0, -1.0),
+        DVec3::new(0.0, 1.0, 0.0),
+    );
+    let aspect_ratio = (width * FULL_BLOCK_WIDTH) as f64 / (height * FULL_BLOCK_HEIGHT) as f64;
+    let proj_mat = DMat4::perspective_rh(45.0f64.to_radians(), aspect_ratio, 0.01, 1000.0);
 
     let framebuffer = Framebuffer::new(width, height);
     let mut renderer = Renderer::new(framebuffer);
@@ -34,16 +45,14 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
         renderer.clear();
 
+        let model_mat = DMat4::from_translation(DVec3::new(0.0, 0.0, -5.0))
+            * DMat4::from_rotation_y(time * 2.0);
         let vertices_pos = [
-            DVec2::new(0.0, 0.57),
-            DVec2::new(-0.5, -0.29),
-            DVec2::new(0.5, -0.29),
+            DVec3::new(0.0, 0.87, 0.0),
+            DVec3::new(-1.0, -0.87, 0.0),
+            DVec3::new(1.0, -0.87, 0.0),
         ]
-        .map(|pos| {
-            let mut pos = rotate(pos, time);
-            pos.x /= (width as f64 / height as f64) * 0.5;
-            pos
-        });
+        .map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
 
         let lines = [
             (vertices_pos[0], vertices_pos[1]),
@@ -51,7 +60,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
             (vertices_pos[2], vertices_pos[0]),
         ];
         for (a, b) in lines {
-            renderer.draw_line(a, b, Pixel::new('*', color::Rgb(255, 255, 255)));
+            renderer.draw_line(a.xy(), b.xy(), Pixel::new('*', color::Rgb(255, 255, 255)));
         }
 
         write!(stdout, "{}", cursor::Goto(1, 1))?;
