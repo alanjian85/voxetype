@@ -60,6 +60,36 @@ impl Renderer {
         }
     }
 
+    pub fn draw_triangle(&mut self, a: DVec2, b: DVec2, c: DVec2, pixel: Pixel) {
+        let a = self.viewport_clip(self.screen_to_viewport(a));
+        let b = self.viewport_clip(self.screen_to_viewport(b));
+        let c = self.viewport_clip(self.screen_to_viewport(c));
+
+        let min = a.min(b).min(c);
+        let max = a.max(b).max(c);
+
+        let edge_a = c - b;
+        let edge_b = a - c;
+        let edge_c = b - a;
+
+        for x in min.x..=max.x {
+            for y in min.y..=max.y {
+                let p = IVec2::new(x, y);
+                let ap = p - a;
+                let bp = p - b;
+                let cp = p - c;
+
+                let det_a = edge_a.perp_dot(bp);
+                let det_b = edge_b.perp_dot(cp);
+                let det_c = edge_c.perp_dot(ap);
+
+                if det_a <= 0 && det_b <= 0 && det_c <= 0 {
+                    self.framebuffer.write(x as usize, y as usize, pixel);
+                }
+            }
+        }
+    }
+
     pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
         self.framebuffer.present(stdout)
     }
