@@ -4,7 +4,7 @@ use std::{
     f64,
     io::{self, Read, Write},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use termion::{color, cursor, raw::IntoRawMode};
 
@@ -35,7 +35,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
     let framebuffer = Framebuffer::new(width, height);
     let mut renderer = Renderer::new(framebuffer);
-    let mut time = 0.0f64;
+    let start_time = Instant::now();
     'game_loop: loop {
         for c in stdin.by_ref().bytes() {
             if c? == b'q' {
@@ -46,7 +46,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.clear();
 
         let model_mat = DMat4::from_translation(DVec3::new(0.0, 0.0, -5.0))
-            * DMat4::from_rotation_y(time * 2.0);
+            * DMat4::from_rotation_y(start_time.elapsed().as_secs_f64() * 2.0);
         let vertices_pos = [
             DVec3::new(0.0, 0.87, 0.0),
             DVec3::new(-1.0, -0.87, 0.0),
@@ -66,9 +66,6 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         write!(stdout, "{}", cursor::Goto(1, 1))?;
         renderer.present(&mut stdout)?;
         stdout.flush()?;
-
-        time += 0.016;
-        thread::sleep(Duration::from_millis(16));
     }
 }
 
