@@ -1,10 +1,9 @@
-use glam::{DMat4, DVec2, DVec3, Vec3Swizzles};
+use glam::{DMat4, DVec3, Vec3Swizzles};
 use std::{
     error::Error,
     f64,
     io::{self, Read, Write},
-    thread,
-    time::{Duration, Instant},
+    time::Instant,
 };
 use termion::{color, cursor, raw::IntoRawMode};
 
@@ -26,7 +25,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     write!(stdout, "{}", cursor::Hide)?;
 
     let view_mat = DMat4::look_to_rh(
-        DVec3::new(0.0, 0.0, 0.0),
+        DVec3::new(0.0, 0.0, 5.0),
         DVec3::new(0.0, 0.0, -1.0),
         DVec3::new(0.0, 1.0, 0.0),
     );
@@ -45,19 +44,73 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
         renderer.clear();
 
-        let model_mat = DMat4::from_translation(DVec3::new(0.0, 0.0, -5.0))
-            * DMat4::from_rotation_y(start_time.elapsed().as_secs_f64() * 2.0);
+        let time = start_time.elapsed().as_secs_f64();
+        let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), time);
         let vertices_pos = [
-            DVec3::new(0.0, 0.87, 0.0),
-            DVec3::new(-1.0, -0.87, 0.0),
-            DVec3::new(1.0, -0.87, 0.0),
+            // front
+            DVec3::new(-1.0, 1.0, 1.0),
+            DVec3::new(-1.0, -1.0, 1.0),
+            DVec3::new(1.0, -1.0, 1.0),
+            DVec3::new(1.0, 1.0, 1.0),
+            // right
+            DVec3::new(1.0, 1.0, 1.0),
+            DVec3::new(1.0, -1.0, 1.0),
+            DVec3::new(1.0, -1.0, -1.0),
+            DVec3::new(1.0, 1.0, -1.0),
+            // top
+            DVec3::new(-1.0, 1.0, -1.0),
+            DVec3::new(-1.0, 1.0, 1.0),
+            DVec3::new(1.0, 1.0, 1.0),
+            DVec3::new(1.0, 1.0, -1.0),
+            // bottom
+            DVec3::new(-1.0, -1.0, 1.0),
+            DVec3::new(-1.0, -1.0, -1.0),
+            DVec3::new(1.0, -1.0, -1.0),
+            DVec3::new(1.0, -1.0, 1.0),
+            // left
+            DVec3::new(-1.0, 1.0, -1.0),
+            DVec3::new(-1.0, -1.0, -1.0),
+            DVec3::new(-1.0, -1.0, 1.0),
+            DVec3::new(-1.0, 1.0, 1.0),
+            // back
+            DVec3::new(1.0, 1.0, -1.0),
+            DVec3::new(1.0, -1.0, -1.0),
+            DVec3::new(-1.0, -1.0, -1.0),
+            DVec3::new(-1.0, 1.0, -1.0),
         ]
         .map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
 
         let lines = [
+            // front
             (vertices_pos[0], vertices_pos[1]),
             (vertices_pos[1], vertices_pos[2]),
-            (vertices_pos[2], vertices_pos[0]),
+            (vertices_pos[2], vertices_pos[3]),
+            (vertices_pos[3], vertices_pos[0]),
+            // right
+            (vertices_pos[4], vertices_pos[5]),
+            (vertices_pos[5], vertices_pos[6]),
+            (vertices_pos[6], vertices_pos[7]),
+            (vertices_pos[7], vertices_pos[4]),
+            // top
+            (vertices_pos[8], vertices_pos[9]),
+            (vertices_pos[9], vertices_pos[10]),
+            (vertices_pos[10], vertices_pos[11]),
+            (vertices_pos[11], vertices_pos[8]),
+            // bottom
+            (vertices_pos[12], vertices_pos[13]),
+            (vertices_pos[13], vertices_pos[14]),
+            (vertices_pos[14], vertices_pos[15]),
+            (vertices_pos[15], vertices_pos[12]),
+            // left
+            (vertices_pos[16], vertices_pos[17]),
+            (vertices_pos[17], vertices_pos[18]),
+            (vertices_pos[18], vertices_pos[19]),
+            (vertices_pos[19], vertices_pos[16]),
+            // back
+            (vertices_pos[20], vertices_pos[21]),
+            (vertices_pos[21], vertices_pos[22]),
+            (vertices_pos[22], vertices_pos[23]),
+            (vertices_pos[23], vertices_pos[20]),
         ];
         for (a, b) in lines {
             renderer.draw_line(a.xy(), b.xy(), Pixel::new('*', color::Rgb(255, 255, 255)));
@@ -67,9 +120,4 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.present(&mut stdout)?;
         stdout.flush()?;
     }
-}
-
-fn rotate(pos: DVec2, theta: f64) -> DVec2 {
-    let (sin, cos) = theta.sin_cos();
-    DVec2::new(cos * pos.x - sin * pos.y, sin * pos.x + cos * pos.y)
 }
