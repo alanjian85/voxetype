@@ -11,7 +11,10 @@ pub mod framebuffer;
 pub mod render;
 
 pub use framebuffer::{Framebuffer, Pixel};
-pub use render::Renderer;
+pub use render::{
+    Renderer,
+    models::{LINES, VERTICES},
+};
 
 const FULL_BLOCK_WIDTH: usize = 10;
 const FULL_BLOCK_HEIGHT: usize = 22;
@@ -46,74 +49,15 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
         let time = start_time.elapsed().as_secs_f64();
         let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), time);
-        let vertices_pos = [
-            // front
-            DVec3::new(-1.0, 1.0, 1.0),
-            DVec3::new(-1.0, -1.0, 1.0),
-            DVec3::new(1.0, -1.0, 1.0),
-            DVec3::new(1.0, 1.0, 1.0),
-            // right
-            DVec3::new(1.0, 1.0, 1.0),
-            DVec3::new(1.0, -1.0, 1.0),
-            DVec3::new(1.0, -1.0, -1.0),
-            DVec3::new(1.0, 1.0, -1.0),
-            // top
-            DVec3::new(-1.0, 1.0, -1.0),
-            DVec3::new(-1.0, 1.0, 1.0),
-            DVec3::new(1.0, 1.0, 1.0),
-            DVec3::new(1.0, 1.0, -1.0),
-            // bottom
-            DVec3::new(-1.0, -1.0, 1.0),
-            DVec3::new(-1.0, -1.0, -1.0),
-            DVec3::new(1.0, -1.0, -1.0),
-            DVec3::new(1.0, -1.0, 1.0),
-            // left
-            DVec3::new(-1.0, 1.0, -1.0),
-            DVec3::new(-1.0, -1.0, -1.0),
-            DVec3::new(-1.0, -1.0, 1.0),
-            DVec3::new(-1.0, 1.0, 1.0),
-            // back
-            DVec3::new(1.0, 1.0, -1.0),
-            DVec3::new(1.0, -1.0, -1.0),
-            DVec3::new(-1.0, -1.0, -1.0),
-            DVec3::new(-1.0, 1.0, -1.0),
-        ]
-        .map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
+        let transformed_vertices =
+            VERTICES.map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
 
-        let lines = [
-            // front
-            (vertices_pos[0], vertices_pos[1]),
-            (vertices_pos[1], vertices_pos[2]),
-            (vertices_pos[2], vertices_pos[3]),
-            (vertices_pos[3], vertices_pos[0]),
-            // right
-            (vertices_pos[4], vertices_pos[5]),
-            (vertices_pos[5], vertices_pos[6]),
-            (vertices_pos[6], vertices_pos[7]),
-            (vertices_pos[7], vertices_pos[4]),
-            // top
-            (vertices_pos[8], vertices_pos[9]),
-            (vertices_pos[9], vertices_pos[10]),
-            (vertices_pos[10], vertices_pos[11]),
-            (vertices_pos[11], vertices_pos[8]),
-            // bottom
-            (vertices_pos[12], vertices_pos[13]),
-            (vertices_pos[13], vertices_pos[14]),
-            (vertices_pos[14], vertices_pos[15]),
-            (vertices_pos[15], vertices_pos[12]),
-            // left
-            (vertices_pos[16], vertices_pos[17]),
-            (vertices_pos[17], vertices_pos[18]),
-            (vertices_pos[18], vertices_pos[19]),
-            (vertices_pos[19], vertices_pos[16]),
-            // back
-            (vertices_pos[20], vertices_pos[21]),
-            (vertices_pos[21], vertices_pos[22]),
-            (vertices_pos[22], vertices_pos[23]),
-            (vertices_pos[23], vertices_pos[20]),
-        ];
-        for (a, b) in lines {
-            renderer.draw_line(a.xy(), b.xy(), Pixel::new('*', color::Rgb(255, 255, 255)));
+        for (a, b) in LINES {
+            renderer.draw_line(
+                transformed_vertices[a].xy(),
+                transformed_vertices[b].xy(),
+                Pixel::new('*', color::Rgb(255, 255, 255)),
+            );
         }
 
         write!(stdout, "{}", cursor::Goto(1, 1))?;
