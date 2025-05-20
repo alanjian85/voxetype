@@ -13,7 +13,7 @@ pub mod render;
 pub use framebuffer::{Framebuffer, Pixel};
 pub use render::{
     Renderer,
-    models::{LINES, VERTICES},
+    models::{LINES, TRIANGLES, VERTICES},
 };
 
 const FULL_BLOCK_WIDTH: usize = 10;
@@ -51,6 +51,18 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), time);
         let transformed_vertices =
             VERTICES.map(|pos| (proj_mat * view_mat * model_mat).project_point3(pos));
+
+        for (i, &(a, b, c)) in TRIANGLES.iter().enumerate() {
+            renderer.draw_triangle(
+                transformed_vertices[a].xy(),
+                transformed_vertices[b].xy(),
+                transformed_vertices[c].xy(),
+                Pixel::new(
+                    char::from_digit(i as u32 / 2, 10).unwrap(),
+                    color::Rgb(255, 255, 255),
+                ),
+            );
+        }
 
         for (a, b) in LINES {
             renderer.draw_line(
