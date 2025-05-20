@@ -4,15 +4,17 @@ use termion::color;
 pub struct Framebuffer {
     width: usize,
     height: usize,
+    background: color::Rgb,
     pixels: Vec<Pixel>,
 }
 
 impl Framebuffer {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize, background: color::Rgb) -> Self {
         let pixels = vec![Pixel::new(' ', color::Rgb(0, 0, 0)); width * height];
         Self {
             width,
             height,
+            background,
             pixels,
         }
     }
@@ -35,6 +37,8 @@ impl Framebuffer {
     }
 
     pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
+        write!(stdout, "{}", color::Bg(self.background))?;
+
         for (y, line) in self.pixels.chunks_exact(self.width).enumerate() {
             for pixel in line {
                 write!(stdout, "{}{}", color::Fg(pixel.color), pixel.symbol)?;

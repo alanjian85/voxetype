@@ -5,19 +5,15 @@ use termion::color;
 
 pub struct Renderer {
     framebuffer: Framebuffer,
-    clear_value: Pixel,
 }
 
 impl Renderer {
     pub fn new(framebuffer: Framebuffer) -> Self {
-        Self {
-            framebuffer,
-            clear_value: Pixel::new(' ', color::Rgb(0, 0, 0)),
-        }
+        Self { framebuffer }
     }
 
     pub fn clear(&mut self) {
-        self.framebuffer.fill(self.clear_value);
+        self.framebuffer.fill(Pixel::new(' ', color::Rgb(0, 0, 0)));
     }
 
     pub fn draw_point(&mut self, pos: DVec2, pixel: Pixel) {

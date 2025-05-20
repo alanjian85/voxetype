@@ -35,7 +35,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     let aspect_ratio = (width * FULL_BLOCK_WIDTH) as f64 / (height * FULL_BLOCK_HEIGHT) as f64;
     let proj_mat = DMat4::perspective_rh(45.0f64.to_radians(), aspect_ratio, 0.01, 1000.0);
 
-    let framebuffer = Framebuffer::new(width, height);
+    let framebuffer = Framebuffer::new(width, height, color::Rgb(98, 9, 92));
     let mut renderer = Renderer::new(framebuffer);
     let start_time = Instant::now();
     'game_loop: loop {
