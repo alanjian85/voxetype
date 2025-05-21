@@ -50,7 +50,19 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.set_transform_mat(proj_mat * view_mat * model_mat);
 
         renderer.clear();
-        renderer.draw_triangles(&TRIANGLES, '*');
+        renderer.draw_triangles(&[&TRIANGLES[0..12], &TRIANGLES[24..36]].concat(), |uv| {
+            if uv.y < 0.75 {
+                Pixel::new('+', color::Rgb(118, 85, 43))
+            } else {
+                Pixel::new('*', color::Rgb(65, 152, 10))
+            }
+        });
+        renderer.draw_triangles(&TRIANGLES[12..18], |_| {
+            Pixel::new('*', color::Rgb(65, 152, 10))
+        });
+        renderer.draw_triangles(&TRIANGLES[18..24], |_| {
+            Pixel::new('+', color::Rgb(118, 85, 43))
+        });
         renderer.present(&mut stdout)?;
     }
 

@@ -30,7 +30,10 @@ impl Renderer {
         self.vertex_buf = vertex_buf;
     }
 
-    pub fn draw_triangles(&mut self, indices: &[usize], symbol: char) {
+    pub fn draw_triangles<F>(&mut self, indices: &[usize], sample_texture: F)
+    where
+        F: Fn(DVec2) -> Pixel,
+    {
         for chunk in indices.chunks_exact(3) {
             let vert_a = self.vertex_buf[chunk[0]];
             let vert_b = self.vertex_buf[chunk[1]];
@@ -64,15 +67,8 @@ impl Renderer {
                             + vert_b.uv * det_b as f64
                             + vert_c.uv * det_c as f64)
                             / area as f64;
-
-                        let r = (uv.x * 255.0).round() as u8;
-                        let g = (uv.y * 255.0).round() as u8;
-                        let b = 0;
-                        self.framebuffer.write(
-                            x as usize,
-                            y as usize,
-                            Pixel::new(symbol, color::Rgb(r, g, b)),
-                        );
+                        self.framebuffer
+                            .write(x as usize, y as usize, sample_texture(uv));
                     }
                 }
             }
