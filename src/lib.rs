@@ -39,7 +39,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     'game_loop: loop {
         for c in stdin.by_ref().bytes() {
             match c? {
-                b'q' => break 'game_loop Ok(()),
+                b'q' => break 'game_loop,
                 b'w' => cam_pos.z -= 0.1,
                 b'a' => cam_pos.x -= 0.1,
                 b's' => cam_pos.z += 0.1,
@@ -66,4 +66,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.present(&mut stdout)?;
         stdout.flush()?;
     }
+
+    write!(stdout, "{}", cursor::Show)?;
+    Ok(())
 }
