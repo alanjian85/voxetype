@@ -32,6 +32,8 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
 
     let framebuffer = Framebuffer::new(width, height, color::Rgb(98, 9, 92));
     let mut renderer = Renderer::new(framebuffer);
+    renderer.set_vertex_buf(VERTICES.to_vec());
+
     let mut cam_pos = DVec3::new(0.0, 0.0, 5.0);
     let start_time = Instant::now();
     'game_loop: loop {
@@ -57,39 +59,8 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         );
         renderer.set_transform_mat(proj_mat * view_mat * model_mat);
 
-        let normals = [
-            DVec3::new(0.0, 0.0, 1.0),
-            DVec3::new(1.0, 0.0, 0.0),
-            DVec3::new(0.0, 1.0, 0.0),
-            DVec3::new(0.0, -1.0, 0.0),
-            DVec3::new(-1.0, 0.0, 0.0),
-            DVec3::new(0.0, 0.0, -1.0),
-        ];
-
-        for (i, &(vert_a, vert_b, vert_c)) in TRIANGLES.iter().enumerate() {
-            let normal = normals[i / 2];
-            let r = ((normal.x * 0.5 + 0.5) * 255.0).round() as u8;
-            let g = ((normal.y * 0.5 + 0.5) * 255.0).round() as u8;
-            let b = ((normal.z * 0.5 + 0.5) * 255.0).round() as u8;
-
-            renderer.draw_triangle(
-                VERTICES[vert_a],
-                VERTICES[vert_b],
-                VERTICES[vert_c],
-                Pixel::new(
-                    char::from_digit(i as u32 / 2 + 1, 10).unwrap(),
-                    color::Rgb(r, g, b),
-                ),
-            );
-        }
-
-        for (a, b) in LINES {
-            renderer.draw_line(
-                VERTICES[a],
-                VERTICES[b],
-                Pixel::new('*', color::Rgb(255, 255, 255)),
-            );
-        }
+        renderer.draw_triangles_index(&TRIANGLES, Pixel::new('0', color::Rgb(255, 255, 255)));
+        renderer.draw_lines_index(&LINES, Pixel::new('*', color::Rgb(255, 255, 255)));
 
         write!(stdout, "{}", cursor::Goto(1, 1))?;
         renderer.present(&mut stdout)?;

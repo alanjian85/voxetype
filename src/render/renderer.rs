@@ -6,6 +6,7 @@ use termion::color;
 pub struct Renderer {
     framebuffer: Framebuffer,
     transform_mat: DMat4,
+    vertex_buf: Vec<DVec3>,
 }
 
 impl Renderer {
@@ -13,6 +14,7 @@ impl Renderer {
         Self {
             framebuffer,
             transform_mat: DMat4::IDENTITY,
+            vertex_buf: Vec::new(),
         }
     }
 
@@ -22,6 +24,10 @@ impl Renderer {
 
     pub fn set_transform_mat(&mut self, transform_mat: DMat4) {
         self.transform_mat = transform_mat;
+    }
+
+    pub fn set_vertex_buf(&mut self, vertex_buf: Vec<DVec3>) {
+        self.vertex_buf = vertex_buf;
     }
 
     pub fn draw_point(&mut self, pos: DVec3, pixel: Pixel) {
@@ -95,6 +101,29 @@ impl Renderer {
                     self.framebuffer.write(x as usize, y as usize, pixel);
                 }
             }
+        }
+    }
+
+    pub fn draw_points_index(&mut self, indices: &[usize], pixel: Pixel) {
+        for &index in indices {
+            self.draw_point(self.vertex_buf[index], pixel);
+        }
+    }
+
+    pub fn draw_lines_index(&mut self, indices: &[usize], pixel: Pixel) {
+        for chunk in indices.chunks_exact(2) {
+            self.draw_line(self.vertex_buf[chunk[0]], self.vertex_buf[chunk[1]], pixel);
+        }
+    }
+
+    pub fn draw_triangles_index(&mut self, indices: &[usize], pixel: Pixel) {
+        for chunk in indices.chunks_exact(3) {
+            self.draw_triangle(
+                self.vertex_buf[chunk[0]],
+                self.vertex_buf[chunk[1]],
+                self.vertex_buf[chunk[2]],
+                pixel,
+            );
         }
     }
 
