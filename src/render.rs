@@ -1,5 +1,5 @@
 pub mod models;
-pub use models::{LINES, VERTICES};
+pub use models::{TRIANGLES, VERTICES};
 
 pub mod renderer;
-pub use renderer::Renderer;
+pub use renderer::{Renderer, Vertex};

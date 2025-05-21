@@ -13,10 +13,7 @@ pub mod time;
 
 pub use camera::Camera;
 pub use framebuffer::{Framebuffer, Pixel};
-pub use render::{
-    Renderer,
-    models::{LINES, TRIANGLES, VERTICES},
-};
+pub use render::{Renderer, TRIANGLES, VERTICES, Vertex};
 pub use time::Timer;
 
 const FULL_BLOCK_WIDTH: usize = 10;
@@ -53,8 +50,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.set_transform_mat(proj_mat * view_mat * model_mat);
 
         renderer.clear();
-        renderer.draw_triangles_index(&TRIANGLES, Pixel::new('0', color::Rgb(255, 255, 255)));
-        renderer.draw_lines_index(&LINES, Pixel::new('*', color::Rgb(255, 255, 255)));
+        renderer.draw_triangles(&TRIANGLES, '*');
         renderer.present(&mut stdout)?;
     }
 

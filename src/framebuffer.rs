@@ -66,7 +66,7 @@ pub struct Pixel {
 }
 
 impl Pixel {
-    pub fn new(symbol: char, color: color::Rgb) -> Self {
+    pub const fn new(symbol: char, color: color::Rgb) -> Self {
         Self { symbol, color }
     }
 }

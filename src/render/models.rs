@@ -1,27 +1,44 @@
-use glam::f64::DVec3;
+use super::renderer::Vertex;
+use glam::f64::{DVec2, DVec3};
 
-pub const VERTICES: [DVec3; 8] = [
-    DVec3::new(-1.0, 1.0, 1.0),
-    DVec3::new(-1.0, -1.0, 1.0),
-    DVec3::new(1.0, -1.0, 1.0),
-    DVec3::new(1.0, 1.0, 1.0),
-    DVec3::new(1.0, 1.0, -1.0),
-    DVec3::new(1.0, -1.0, -1.0),
-    DVec3::new(-1.0, -1.0, -1.0),
-    DVec3::new(-1.0, 1.0, -1.0),
-];
-
-pub const LINES: [usize; 24] = [
-    0, 1, 1, 2, 2, 3, 3, 0, // front
-    0, 7, 1, 6, 2, 5, 3, 4, // side
-    4, 5, 5, 6, 6, 7, 7, 4, // back
+pub const VERTICES: [Vertex; 24] = [
+    // front
+    Vertex::new(DVec3::new(-1.0, 1.0, 1.0), DVec2::new(0.0, 1.0)),
+    Vertex::new(DVec3::new(-1.0, -1.0, 1.0), DVec2::new(0.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, -1.0, 1.0), DVec2::new(1.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, 1.0, 1.0), DVec2::new(1.0, 1.0)),
+    // right
+    Vertex::new(DVec3::new(1.0, 1.0, 1.0), DVec2::new(0.0, 1.0)),
+    Vertex::new(DVec3::new(1.0, -1.0, 1.0), DVec2::new(0.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, -1.0, -1.0), DVec2::new(1.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, 1.0, -1.0), DVec2::new(1.0, 1.0)),
+    // top
+    Vertex::new(DVec3::new(-1.0, 1.0, -1.0), DVec2::new(0.0, 1.0)),
+    Vertex::new(DVec3::new(-1.0, 1.0, 1.0), DVec2::new(0.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, 1.0, 1.0), DVec2::new(1.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, 1.0, -1.0), DVec2::new(1.0, 1.0)),
+    // bottom
+    Vertex::new(DVec3::new(-1.0, -1.0, 1.0), DVec2::new(0.0, 1.0)),
+    Vertex::new(DVec3::new(-1.0, -1.0, -1.0), DVec2::new(0.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, -1.0, -1.0), DVec2::new(1.0, 0.0)),
+    Vertex::new(DVec3::new(1.0, -1.0, 1.0), DVec2::new(1.0, 1.0)),
+    // left
+    Vertex::new(DVec3::new(-1.0, 1.0, -1.0), DVec2::new(0.0, 1.0)),
+    Vertex::new(DVec3::new(-1.0, -1.0, -1.0), DVec2::new(0.0, 0.0)),
+    Vertex::new(DVec3::new(-1.0, -1.0, 1.0), DVec2::new(1.0, 0.0)),
+    Vertex::new(DVec3::new(-1.0, 1.0, 1.0), DVec2::new(1.0, 1.0)),
+    // back
+    Vertex::new(DVec3::new(1.0, 1.0, -1.0), DVec2::new(0.0, 1.0)),
+    Vertex::new(DVec3::new(1.0, -1.0, -1.0), DVec2::new(0.0, 0.0)),
+    Vertex::new(DVec3::new(-1.0, -1.0, -1.0), DVec2::new(1.0, 0.0)),
+    Vertex::new(DVec3::new(-1.0, 1.0, -1.0), DVec2::new(1.0, 1.0)),
 ];
 
 pub const TRIANGLES: [usize; 36] = [
     0, 1, 2, 0, 2, 3, // front
-    3, 2, 5, 3, 5, 4, // right
-    7, 0, 3, 7, 3, 4, // top
-    1, 6, 5, 1, 5, 2, // bottom
-    7, 6, 1, 7, 1, 0, // left
-    4, 5, 6, 4, 6, 7, // back
+    4, 5, 6, 4, 6, 7, // right
+    8, 9, 10, 8, 10, 11, // top
+    12, 13, 14, 12, 14, 15, // bottom
+    16, 17, 18, 16, 18, 19, // left
+    20, 21, 22, 20, 22, 23, // back
 ];
