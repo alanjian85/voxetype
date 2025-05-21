@@ -24,7 +24,7 @@ impl Camera {
     }
 
     pub fn view_mat(&self) -> DMat4 {
-        DMat4::look_at_lh(
+        DMat4::look_at_rh(
             DVec3::new(self.theta.sin(), 0.0, self.theta.cos()) * self.radius,
             DVec3::new(0.0, 0.0, 0.0),
             DVec3::new(0.0, 1.0, 0.0),

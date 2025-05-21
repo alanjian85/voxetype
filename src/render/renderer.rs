@@ -50,16 +50,16 @@ impl Renderer {
             for x in min.x..=max.x {
                 for y in min.y..=max.y {
                     let p = IVec2::new(x, y);
-                    let ap = p - a;
-                    let bp = p - b;
-                    let cp = p - c;
+                    let pa = a - p;
+                    let pb = b - p;
+                    let pc = c - p;
 
-                    let det_a = edge_a.perp_dot(bp);
-                    let det_b = edge_b.perp_dot(cp);
-                    let det_c = edge_c.perp_dot(ap);
+                    let det_a = edge_a.perp_dot(pb);
+                    let det_b = edge_b.perp_dot(pc);
+                    let det_c = edge_c.perp_dot(pa);
 
                     if det_a >= 0 && det_b >= 0 && det_c >= 0 {
-                        let area = edge_a.perp_dot(-edge_c);
+                        let area = edge_a.perp_dot(edge_c);
                         let uv = (vert_a.uv * det_a as f64
                             + vert_b.uv * det_b as f64
                             + vert_c.uv * det_c as f64)
@@ -79,10 +79,6 @@ impl Renderer {
         }
     }
 
-    pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
-        self.framebuffer.present(stdout)
-    }
-
     fn screen_to_viewport(&self, v: DVec2) -> IVec2 {
         ((v * DVec2::new(0.5, -0.5) + 0.5)
             * DVec2::new(
@@ -91,6 +87,10 @@ impl Renderer {
             )
             .round())
         .as_ivec2()
+    }
+
+    pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
+        self.framebuffer.present(stdout)
     }
 }
 
