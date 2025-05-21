@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use termion::color;
+use termion::{color, cursor};
 
 pub struct Framebuffer {
     width: usize,
@@ -37,7 +37,12 @@ impl Framebuffer {
     }
 
     pub fn present(&self, stdout: &mut impl Write) -> io::Result<()> {
-        write!(stdout, "{}", color::Bg(self.background))?;
+        write!(
+            stdout,
+            "{}{}",
+            cursor::Goto(1, 1),
+            color::Bg(self.background)
+        )?;
 
         for (y, line) in self.pixels.chunks_exact(self.width).enumerate() {
             for pixel in line {
@@ -49,6 +54,7 @@ impl Framebuffer {
             }
         }
 
+        stdout.flush()?;
         Ok(())
     }
 }
