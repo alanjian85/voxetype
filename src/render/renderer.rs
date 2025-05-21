@@ -1,5 +1,5 @@
 use crate::framebuffer::{Framebuffer, Pixel};
-use glam::{DMat4, DVec3, Vec3Swizzles, f64::DVec2, i32::IVec2};
+use glam::{DMat4, DVec3, DVec4, Vec3Swizzles, Vec4Swizzles, f64::DVec2, i32::IVec2};
 use std::io::{self, Write};
 use termion::color;
 
@@ -39,9 +39,21 @@ impl Renderer {
             let vert_b = self.vertex_buf[chunk[1]];
             let vert_c = self.vertex_buf[chunk[2]];
 
-            let a = self.screen_to_viewport(self.transform_mat.project_point3(vert_a.pos).xy());
-            let b = self.screen_to_viewport(self.transform_mat.project_point3(vert_b.pos).xy());
-            let c = self.screen_to_viewport(self.transform_mat.project_point3(vert_c.pos).xy());
+            let a = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_a.pos);
+            let b = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_b.pos);
+            let c = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_c.pos);
+
+            let rwa = 1.0 / a.w;
+            let rwb = 1.0 / b.w;
+            let rwc = 1.0 / c.w;
+
+            let uva = vert_a.uv * rwa;
+            let uvb = vert_b.uv * rwb;
+            let uvc = vert_c.uv * rwc;
+
+            let a = self.screen_to_viewport((a * rwa).xy());
+            let b = self.screen_to_viewport((b * rwb).xy());
+            let c = self.screen_to_viewport((c * rwc).xy());
 
             let min = a.min(b).min(c);
             let max = a.max(b).max(c);
@@ -57,16 +69,14 @@ impl Renderer {
                     let pb = b - p;
                     let pc = c - p;
 
-                    let det_a = edge_a.perp_dot(pb);
-                    let det_b = edge_b.perp_dot(pc);
-                    let det_c = edge_c.perp_dot(pa);
+                    let det_a = edge_a.perp_dot(pb) as f64;
+                    let det_b = edge_b.perp_dot(pc) as f64;
+                    let det_c = edge_c.perp_dot(pa) as f64;
 
-                    if det_a >= 0 && det_b >= 0 && det_c >= 0 {
-                        let area = edge_a.perp_dot(edge_c);
-                        let uv = (vert_a.uv * det_a as f64
-                            + vert_b.uv * det_b as f64
-                            + vert_c.uv * det_c as f64)
-                            / area as f64;
+                    if det_a >= 0.0 && det_b >= 0.0 && det_c >= 0.0 {
+                        let area = edge_a.perp_dot(edge_c) as f64;
+                        let rw = (rwa * det_a + rwb * det_b + rwc * det_c) / area;
+                        let uv = (uva * det_a + uvb * det_b + uvc * det_c) / (area * rw);
                         self.framebuffer
                             .write(x as usize, y as usize, sample_texture(uv));
                     }
