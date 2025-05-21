@@ -1,5 +1,5 @@
-use crate::framebuffer::{Framebuffer, Pixel};
-use glam::{DMat4, DVec3, DVec4, Vec3Swizzles, Vec4Swizzles, f64::DVec2, i32::IVec2};
+use crate::framebuffer::Framebuffer;
+use glam::{DMat4, DVec3, DVec4, Vec4Swizzles, f64::DVec2, i32::IVec2};
 use std::io::{self, Write};
 use termion::color;
 
@@ -19,7 +19,7 @@ impl Renderer {
     }
 
     pub fn clear(&mut self) {
-        self.framebuffer.fill(Pixel::new(' ', color::Rgb(0, 0, 0)));
+        self.framebuffer.fill(' ', color::Rgb(0, 0, 0));
     }
 
     pub fn set_transform_mat(&mut self, transform_mat: DMat4) {
@@ -32,7 +32,7 @@ impl Renderer {
 
     pub fn draw_triangles<F>(&mut self, indices: &[usize], sample_texture: F)
     where
-        F: Fn(DVec2) -> Pixel,
+        F: Fn(DVec2) -> (char, color::Rgb),
     {
         for chunk in indices.chunks_exact(3) {
             let vert_a = self.vertex_buf[chunk[0]];
@@ -77,8 +77,8 @@ impl Renderer {
                         let area = edge_a.perp_dot(edge_c) as f64;
                         let rw = (rwa * det_a + rwb * det_b + rwc * det_c) / area;
                         let uv = (uva * det_a + uvb * det_b + uvc * det_c) / (area * rw);
-                        self.framebuffer
-                            .write(x as usize, y as usize, sample_texture(uv));
+                        let (glyph, color) = sample_texture(uv);
+                        self.framebuffer.write(x as usize, y as usize, glyph, color);
                     }
                 }
             }

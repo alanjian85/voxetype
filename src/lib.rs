@@ -12,7 +12,7 @@ pub mod render;
 pub mod time;
 
 pub use camera::Camera;
-pub use framebuffer::{Framebuffer, Pixel};
+pub use framebuffer::Framebuffer;
 pub use render::{Renderer, TRIANGLES, VERTICES, Vertex};
 pub use time::Timer;
 
@@ -27,7 +27,21 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     let mut stdin = termion::async_stdin();
     write!(stdout, "{}", cursor::Hide)?;
 
-    let framebuffer = Framebuffer::new(width, height, color::Rgb(98, 9, 92));
+    let mut framebuffer = Framebuffer::new(width, height);
+    for y in 0..framebuffer.height() {
+        for x in 0..framebuffer.width() {
+            let alpha = y as f64 / (framebuffer.height() - 1) as f64;
+            framebuffer.write_background(
+                x,
+                y,
+                color::Rgb(
+                    ((1.0 - alpha) * 102.0 + alpha * 41.0).round() as u8,
+                    ((1.0 - alpha) * 102.0 + alpha * 0.0).round() as u8,
+                    ((1.0 - alpha) * 153.0 + alpha * 94.0).round() as u8,
+                ),
+            );
+        }
+    }
     let mut renderer = Renderer::new(framebuffer);
     renderer.set_vertex_buf(VERTICES.to_vec());
 
@@ -52,17 +66,13 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.clear();
         renderer.draw_triangles(&[&TRIANGLES[0..12], &TRIANGLES[24..36]].concat(), |uv| {
             if uv.y < 0.75 {
-                Pixel::new('+', color::Rgb(118, 85, 43))
+                ('+', color::Rgb(118, 85, 43))
             } else {
-                Pixel::new('*', color::Rgb(65, 152, 10))
+                ('*', color::Rgb(65, 152, 10))
             }
         });
-        renderer.draw_triangles(&TRIANGLES[12..18], |_| {
-            Pixel::new('*', color::Rgb(65, 152, 10))
-        });
-        renderer.draw_triangles(&TRIANGLES[18..24], |_| {
-            Pixel::new('+', color::Rgb(118, 85, 43))
-        });
+        renderer.draw_triangles(&TRIANGLES[12..18], |_| ('*', color::Rgb(65, 152, 10)));
+        renderer.draw_triangles(&TRIANGLES[18..24], |_| ('+', color::Rgb(118, 85, 43)));
         renderer.present(&mut stdout)?;
     }
 
