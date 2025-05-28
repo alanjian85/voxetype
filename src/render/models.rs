@@ -3,35 +3,131 @@ use glam::f64::{DVec2, DVec3};
 
 pub const VERTICES: [Vertex; 24] = [
     // front
-    Vertex::new(DVec3::new(-1.0, 1.0, 1.0), DVec2::new(0.0, 1.0)),
-    Vertex::new(DVec3::new(-1.0, -1.0, 1.0), DVec2::new(0.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, -1.0, 1.0), DVec2::new(1.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, 1.0, 1.0), DVec2::new(1.0, 1.0)),
+    Vertex::new(
+        DVec3::new(-1.0, 1.0, 1.0),
+        DVec2::new(0.0, 1.0),
+        DVec3::new(0.0, 0.0, 1.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, -1.0, 1.0),
+        DVec2::new(0.0, 0.0),
+        DVec3::new(0.0, 0.0, 1.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, -1.0, 1.0),
+        DVec2::new(1.0, 0.0),
+        DVec3::new(0.0, 0.0, 1.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, 1.0, 1.0),
+        DVec2::new(1.0, 1.0),
+        DVec3::new(0.0, 0.0, 1.0),
+    ),
     // right
-    Vertex::new(DVec3::new(1.0, 1.0, 1.0), DVec2::new(0.0, 1.0)),
-    Vertex::new(DVec3::new(1.0, -1.0, 1.0), DVec2::new(0.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, -1.0, -1.0), DVec2::new(1.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, 1.0, -1.0), DVec2::new(1.0, 1.0)),
+    Vertex::new(
+        DVec3::new(1.0, 1.0, 1.0),
+        DVec2::new(0.0, 1.0),
+        DVec3::new(1.0, 0.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, -1.0, 1.0),
+        DVec2::new(0.0, 0.0),
+        DVec3::new(1.0, 0.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, -1.0, -1.0),
+        DVec2::new(1.0, 0.0),
+        DVec3::new(1.0, 0.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, 1.0, -1.0),
+        DVec2::new(1.0, 1.0),
+        DVec3::new(1.0, 0.0, 0.0),
+    ),
     // top
-    Vertex::new(DVec3::new(-1.0, 1.0, -1.0), DVec2::new(0.0, 1.0)),
-    Vertex::new(DVec3::new(-1.0, 1.0, 1.0), DVec2::new(0.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, 1.0, 1.0), DVec2::new(1.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, 1.0, -1.0), DVec2::new(1.0, 1.0)),
+    Vertex::new(
+        DVec3::new(-1.0, 1.0, -1.0),
+        DVec2::new(0.0, 1.0),
+        DVec3::new(0.0, 1.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, 1.0, 1.0),
+        DVec2::new(0.0, 0.0),
+        DVec3::new(0.0, 1.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, 1.0, 1.0),
+        DVec2::new(1.0, 0.0),
+        DVec3::new(0.0, 1.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, 1.0, -1.0),
+        DVec2::new(1.0, 1.0),
+        DVec3::new(0.0, 1.0, 0.0),
+    ),
     // bottom
-    Vertex::new(DVec3::new(-1.0, -1.0, 1.0), DVec2::new(0.0, 1.0)),
-    Vertex::new(DVec3::new(-1.0, -1.0, -1.0), DVec2::new(0.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, -1.0, -1.0), DVec2::new(1.0, 0.0)),
-    Vertex::new(DVec3::new(1.0, -1.0, 1.0), DVec2::new(1.0, 1.0)),
+    Vertex::new(
+        DVec3::new(-1.0, -1.0, 1.0),
+        DVec2::new(0.0, 1.0),
+        DVec3::new(0.0, -1.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, -1.0, -1.0),
+        DVec2::new(0.0, 0.0),
+        DVec3::new(0.0, -1.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, -1.0, -1.0),
+        DVec2::new(1.0, 0.0),
+        DVec3::new(0.0, -1.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, -1.0, 1.0),
+        DVec2::new(1.0, 1.0),
+        DVec3::new(0.0, -1.0, 0.0),
+    ),
     // left
-    Vertex::new(DVec3::new(-1.0, 1.0, -1.0), DVec2::new(0.0, 1.0)),
-    Vertex::new(DVec3::new(-1.0, -1.0, -1.0), DVec2::new(0.0, 0.0)),
-    Vertex::new(DVec3::new(-1.0, -1.0, 1.0), DVec2::new(1.0, 0.0)),
-    Vertex::new(DVec3::new(-1.0, 1.0, 1.0), DVec2::new(1.0, 1.0)),
+    Vertex::new(
+        DVec3::new(-1.0, 1.0, -1.0),
+        DVec2::new(0.0, 1.0),
+        DVec3::new(-1.0, 0.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, -1.0, -1.0),
+        DVec2::new(0.0, 0.0),
+        DVec3::new(-1.0, 0.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, -1.0, 1.0),
+        DVec2::new(1.0, 0.0),
+        DVec3::new(-1.0, 0.0, 0.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, 1.0, 1.0),
+        DVec2::new(1.0, 1.0),
+        DVec3::new(-1.0, 0.0, 0.0),
+    ),
     // back
-    Vertex::new(DVec3::new(1.0, 1.0, -1.0), DVec2::new(0.0, 1.0)),
-    Vertex::new(DVec3::new(1.0, -1.0, -1.0), DVec2::new(0.0, 0.0)),
-    Vertex::new(DVec3::new(-1.0, -1.0, -1.0), DVec2::new(1.0, 0.0)),
-    Vertex::new(DVec3::new(-1.0, 1.0, -1.0), DVec2::new(1.0, 1.0)),
+    Vertex::new(
+        DVec3::new(1.0, 1.0, -1.0),
+        DVec2::new(0.0, 1.0),
+        DVec3::new(0.0, 0.0, -1.0),
+    ),
+    Vertex::new(
+        DVec3::new(1.0, -1.0, -1.0),
+        DVec2::new(0.0, 0.0),
+        DVec3::new(0.0, 0.0, -1.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, -1.0, -1.0),
+        DVec2::new(1.0, 0.0),
+        DVec3::new(0.0, 0.0, -1.0),
+    ),
+    Vertex::new(
+        DVec3::new(-1.0, 1.0, -1.0),
+        DVec2::new(1.0, 1.0),
+        DVec3::new(0.0, 0.0, -1.0),
+    ),
 ];
 
 pub const TRIANGLES: [usize; 36] = [

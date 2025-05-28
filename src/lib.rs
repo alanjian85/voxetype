@@ -46,7 +46,7 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     renderer.set_vertex_buf(VERTICES.to_vec());
 
     let mut timer = Timer::new();
-    let mut camera = Camera::new(50.0, 5.0);
+    let mut camera = Camera::new(50.0, 10.0, 5.0);
     'game_loop: loop {
         timer.update();
         for c in stdin.by_ref().bytes() {
@@ -61,19 +61,20 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         let proj_mat = DMat4::perspective_rh(45.0f64.to_radians(), aspect_ratio, 0.01, 1000.0);
         let view_mat = camera.view_mat();
         let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), timer.time());
+        renderer.set_model_mat(model_mat);
         renderer.set_transform_mat(proj_mat * view_mat * model_mat);
 
         renderer.clear();
-        renderer.draw_triangles(&TRIANGLES[0..36], |uv| {
-            let alphabet = [';', '+', '!', '*', '#', '$', '@'];
+        renderer.draw_triangles(&TRIANGLES[0..36], |uv, normal| {
+            let alphabet = ['#', '%', '&', '*', '@', '$', '0'];
             let palette = [
-                color::Rgb(185, 133, 92),
-                color::Rgb(150, 108, 74),
-                color::Rgb(121, 85, 58),
-                color::Rgb(89, 61, 41),
-                color::Rgb(135, 135, 135),
-                color::Rgb(108, 108, 108),
-                color::Rgb(116, 88, 68),
+                DVec3::new(0.73, 0.52, 0.36),
+                DVec3::new(0.59, 0.42, 0.29),
+                DVec3::new(0.47, 0.33, 0.23),
+                DVec3::new(0.35, 0.24, 0.16),
+                DVec3::new(0.53, 0.53, 0.53),
+                DVec3::new(0.42, 0.42, 0.42),
+                DVec3::new(0.45, 0.35, 0.27),
             ];
             let texture = [
                 [0, 1, 1, 2, 2, 0, 1, 1, 2, 2, 3, 2, 2, 0, 2, 0],
@@ -96,7 +97,11 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
             let x = (uv.x * (texture[0].len() - 1) as f64).round() as usize;
             let y = ((1.0 - uv.y) * (texture.len() - 1) as f64).round() as usize;
             let texel = texture[x][y];
-            (alphabet[texel], palette[texel])
+            let color = palette[texel] * camera.pos().normalize().dot(normal).max(0.0);
+            let r = (color.x * 255.0).round() as u8;
+            let g = (color.y * 255.0).round() as u8;
+            let b = (color.z * 255.0).round() as u8;
+            (alphabet[texel], color::Rgb(r, g, b))
         });
         renderer.present(&mut stdout)?;
     }

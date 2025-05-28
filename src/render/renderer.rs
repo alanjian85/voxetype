@@ -6,6 +6,7 @@ use termion::color;
 pub struct Renderer {
     framebuffer: Framebuffer,
     transform_mat: DMat4,
+    normal_mat: DMat4,
     vertex_buf: Vec<Vertex>,
 }
 
@@ -14,6 +15,7 @@ impl Renderer {
         Self {
             framebuffer,
             transform_mat: DMat4::IDENTITY,
+            normal_mat: DMat4::IDENTITY,
             vertex_buf: Vec::new(),
         }
     }
@@ -26,13 +28,17 @@ impl Renderer {
         self.transform_mat = transform_mat;
     }
 
+    pub fn set_model_mat(&mut self, model_mat: DMat4) {
+        self.normal_mat = model_mat.inverse().transpose();
+    }
+
     pub fn set_vertex_buf(&mut self, vertex_buf: Vec<Vertex>) {
         self.vertex_buf = vertex_buf;
     }
 
-    pub fn draw_triangles<F>(&mut self, indices: &[usize], sample_texture: F)
+    pub fn draw_triangles<F>(&mut self, indices: &[usize], shader: F)
     where
-        F: Fn(DVec2) -> (char, color::Rgb),
+        F: Fn(DVec2, DVec3) -> (char, color::Rgb),
     {
         for chunk in indices.chunks_exact(3) {
             let vert_a = self.vertex_buf[chunk[0]];
@@ -43,17 +49,21 @@ impl Renderer {
             let b = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_b.pos);
             let c = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_c.pos);
 
-            let rwa = 1.0 / a.w;
-            let rwb = 1.0 / b.w;
-            let rwc = 1.0 / c.w;
+            let rw_a = 1.0 / a.w;
+            let rw_b = 1.0 / b.w;
+            let rw_c = 1.0 / c.w;
 
-            let uva = vert_a.uv * rwa;
-            let uvb = vert_b.uv * rwb;
-            let uvc = vert_c.uv * rwc;
+            let uv_a = vert_a.uv * rw_a;
+            let uv_b = vert_b.uv * rw_b;
+            let uv_c = vert_c.uv * rw_c;
 
-            let a = self.screen_to_viewport((a * rwa).xy());
-            let b = self.screen_to_viewport((b * rwb).xy());
-            let c = self.screen_to_viewport((c * rwc).xy());
+            let normal_a = vert_a.normal * rw_a;
+            let normal_b = vert_b.normal * rw_b;
+            let normal_c = vert_c.normal * rw_c;
+
+            let a = self.screen_to_viewport((a * rw_a).xy());
+            let b = self.screen_to_viewport((b * rw_b).xy());
+            let c = self.screen_to_viewport((c * rw_c).xy());
 
             let min = a.min(b).min(c);
             let max = a.max(b).max(c);
@@ -75,9 +85,15 @@ impl Renderer {
 
                     if det_a >= 0.0 && det_b >= 0.0 && det_c >= 0.0 {
                         let area = edge_a.perp_dot(edge_c) as f64;
-                        let rw = (rwa * det_a + rwb * det_b + rwc * det_c) / area;
-                        let uv = (uva * det_a + uvb * det_b + uvc * det_c) / (area * rw);
-                        let (glyph, color) = sample_texture(uv);
+                        let rw = (rw_a * det_a + rw_b * det_b + rw_c * det_c) / area;
+                        let uv = (uv_a * det_a + uv_b * det_b + uv_c * det_c) / (area * rw);
+                        let normal = self
+                            .normal_mat
+                            .transform_vector3(
+                                normal_a * det_a + normal_b * det_b + normal_c * det_c,
+                            )
+                            .normalize();
+                        let (glyph, color) = shader(uv, normal);
                         self.framebuffer.write(x as usize, y as usize, glyph, color);
                     }
                 }
@@ -104,10 +120,11 @@ impl Renderer {
 pub struct Vertex {
     pub pos: DVec3,
     pub uv: DVec2,
+    pub normal: DVec3,
 }
 
 impl Vertex {
-    pub const fn new(pos: DVec3, uv: DVec2) -> Self {
-        Self { pos, uv }
+    pub const fn new(pos: DVec3, uv: DVec2, normal: DVec3) -> Self {
+        Self { pos, uv, normal }
     }
 }
