@@ -64,15 +64,40 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         renderer.set_transform_mat(proj_mat * view_mat * model_mat);
 
         renderer.clear();
-        renderer.draw_triangles(&[&TRIANGLES[0..12], &TRIANGLES[24..36]].concat(), |uv| {
-            if uv.y < 0.75 {
-                ('+', color::Rgb(118, 85, 43))
-            } else {
-                ('*', color::Rgb(65, 152, 10))
-            }
+        renderer.draw_triangles(&TRIANGLES[0..36], |uv| {
+            let alphabet = [';', '+', '!', '*', '#', '$', '@'];
+            let palette = [
+                color::Rgb(185, 133, 92),
+                color::Rgb(150, 108, 74),
+                color::Rgb(121, 85, 58),
+                color::Rgb(89, 61, 41),
+                color::Rgb(135, 135, 135),
+                color::Rgb(108, 108, 108),
+                color::Rgb(116, 88, 68),
+            ];
+            let texture = [
+                [0, 1, 1, 2, 2, 0, 1, 1, 2, 2, 3, 2, 2, 0, 2, 0],
+                [2, 1, 3, 2, 2, 1, 4, 3, 2, 0, 1, 2, 0, 1, 3, 3],
+                [0, 2, 2, 3, 0, 2, 2, 2, 0, 2, 2, 2, 3, 3, 0, 2],
+                [1, 5, 0, 2, 1, 3, 2, 0, 1, 1, 2, 1, 2, 0, 1, 2],
+                [1, 2, 1, 0, 3, 1, 2, 2, 1, 3, 2, 5, 2, 1, 3, 2],
+                [2, 3, 1, 1, 2, 1, 3, 3, 3, 2, 2, 3, 2, 2, 2, 1],
+                [0, 2, 2, 2, 4, 2, 2, 0, 0, 2, 0, 0, 2, 1, 2, 1],
+                [2, 2, 0, 0, 1, 1, 2, 2, 1, 3, 1, 1, 2, 2, 1, 1],
+                [1, 2, 2, 1, 2, 1, 2, 3, 2, 1, 1, 2, 2, 2, 3, 2],
+                [2, 1, 3, 2, 2, 3, 3, 2, 2, 2, 2, 2, 0, 0, 2, 1],
+                [2, 1, 2, 0, 0, 2, 0, 1, 3, 0, 0, 3, 1, 1, 4, 2],
+                [1, 2, 2, 1, 1, 0, 2, 1, 5, 1, 1, 2, 3, 1, 2, 3],
+                [2, 3, 1, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0],
+                [2, 1, 2, 2, 6, 2, 1, 1, 2, 3, 0, 3, 2, 0, 1, 1],
+                [1, 2, 3, 0, 2, 3, 2, 3, 0, 0, 2, 1, 2, 2, 1, 1],
+                [1, 2, 0, 1, 1, 2, 4, 2, 1, 1, 2, 2, 1, 1, 2, 3],
+            ];
+            let x = (uv.x * (texture[0].len() - 1) as f64).round() as usize;
+            let y = ((1.0 - uv.y) * (texture.len() - 1) as f64).round() as usize;
+            let texel = texture[x][y];
+            (alphabet[texel], palette[texel])
         });
-        renderer.draw_triangles(&TRIANGLES[12..18], |_| ('*', color::Rgb(65, 152, 10)));
-        renderer.draw_triangles(&TRIANGLES[18..24], |_| ('+', color::Rgb(118, 85, 43)));
         renderer.present(&mut stdout)?;
     }
 
