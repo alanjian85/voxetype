@@ -1,12 +1,13 @@
 use crate::framebuffer::Framebuffer;
-use glam::{DMat4, DVec3, DVec4, Vec4Swizzles, f64::DVec2, i32::IVec2};
-use std::io::{self, Write};
+use glam::{DVec3, DVec4, Vec4Swizzles, f64::DVec2, i32::IVec2};
+use std::{
+    io::{self, Write},
+    ops::{Add, Div, Mul},
+};
 use termion::color;
 
 pub struct Renderer {
     framebuffer: Framebuffer,
-    transform_mat: DMat4,
-    normal_mat: DMat4,
     vertex_buf: Vec<Vertex>,
 }
 
@@ -14,8 +15,6 @@ impl Renderer {
     pub fn new(framebuffer: Framebuffer) -> Self {
         Self {
             framebuffer,
-            transform_mat: DMat4::IDENTITY,
-            normal_mat: DMat4::IDENTITY,
             vertex_buf: Vec::new(),
         }
     }
@@ -24,46 +23,27 @@ impl Renderer {
         self.framebuffer.fill(' ', color::Rgb(0, 0, 0));
     }
 
-    pub fn set_transform_mat(&mut self, transform_mat: DMat4) {
-        self.transform_mat = transform_mat;
-    }
-
-    pub fn set_model_mat(&mut self, model_mat: DMat4) {
-        self.normal_mat = model_mat.inverse().transpose();
-    }
-
     pub fn set_vertex_buf(&mut self, vertex_buf: Vec<Vertex>) {
         self.vertex_buf = vertex_buf;
     }
 
-    pub fn draw_triangles<F>(&mut self, indices: &[usize], shader: F)
-    where
-        F: Fn(DVec2, DVec3) -> (char, color::Rgb),
-    {
+    pub fn draw_triangles(&mut self, indices: &[usize], shader_set: &ShaderSet) {
         for chunk in indices.chunks_exact(3) {
-            let vert_a = self.vertex_buf[chunk[0]];
-            let vert_b = self.vertex_buf[chunk[1]];
-            let vert_c = self.vertex_buf[chunk[2]];
+            let vert_a = (shader_set.vert_shader)(self.vertex_buf[chunk[0]]);
+            let vert_b = (shader_set.vert_shader)(self.vertex_buf[chunk[1]]);
+            let vert_c = (shader_set.vert_shader)(self.vertex_buf[chunk[2]]);
 
-            let a = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_a.pos);
-            let b = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_b.pos);
-            let c = self.transform_mat * DVec4::new(0.0, 0.0, 0.0, 1.0).with_xyz(vert_c.pos);
+            let rw_a = 1.0 / vert_a.pos.w;
+            let rw_b = 1.0 / vert_b.pos.w;
+            let rw_c = 1.0 / vert_c.pos.w;
 
-            let rw_a = 1.0 / a.w;
-            let rw_b = 1.0 / b.w;
-            let rw_c = 1.0 / c.w;
+            let vert_a = vert_a * rw_a;
+            let vert_b = vert_b * rw_b;
+            let vert_c = vert_c * rw_c;
 
-            let uv_a = vert_a.uv * rw_a;
-            let uv_b = vert_b.uv * rw_b;
-            let uv_c = vert_c.uv * rw_c;
-
-            let normal_a = vert_a.normal * rw_a;
-            let normal_b = vert_b.normal * rw_b;
-            let normal_c = vert_c.normal * rw_c;
-
-            let a = self.screen_to_viewport((a * rw_a).xy());
-            let b = self.screen_to_viewport((b * rw_b).xy());
-            let c = self.screen_to_viewport((c * rw_c).xy());
+            let a = self.screen_to_viewport(vert_a.pos.xy());
+            let b = self.screen_to_viewport(vert_b.pos.xy());
+            let c = self.screen_to_viewport(vert_c.pos.xy());
 
             let min = a.min(b).min(c);
             let max = a.max(b).max(c);
@@ -84,16 +64,9 @@ impl Renderer {
                     let det_c = edge_c.perp_dot(pa) as f64;
 
                     if det_a >= 0.0 && det_b >= 0.0 && det_c >= 0.0 {
-                        let area = edge_a.perp_dot(edge_c) as f64;
-                        let rw = (rw_a * det_a + rw_b * det_b + rw_c * det_c) / area;
-                        let uv = (uv_a * det_a + uv_b * det_b + uv_c * det_c) / (area * rw);
-                        let normal = self
-                            .normal_mat
-                            .transform_vector3(
-                                normal_a * det_a + normal_b * det_b + normal_c * det_c,
-                            )
-                            .normalize();
-                        let (glyph, color) = shader(uv, normal);
+                        let denom = rw_a * det_a + rw_b * det_b + rw_c * det_c;
+                        let vert = (vert_a * det_a + vert_b * det_b + vert_c * det_c) / denom;
+                        let (glyph, color) = (shader_set.frag_shader)(vert);
                         self.framebuffer.write(x as usize, y as usize, glyph, color);
                     }
                 }
@@ -118,13 +91,66 @@ impl Renderer {
 
 #[derive(Clone, Copy)]
 pub struct Vertex {
-    pub pos: DVec3,
+    pub pos: DVec4,
     pub uv: DVec2,
     pub normal: DVec3,
 }
 
 impl Vertex {
-    pub const fn new(pos: DVec3, uv: DVec2, normal: DVec3) -> Self {
+    pub const fn new(pos: DVec4, uv: DVec2, normal: DVec3) -> Self {
         Self { pos, uv, normal }
+    }
+}
+
+impl Add<Vertex> for Vertex {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            pos: self.pos + rhs.pos,
+            uv: self.uv + rhs.uv,
+            normal: self.normal + rhs.normal,
+        }
+    }
+}
+
+impl Mul<f64> for Vertex {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self {
+            pos: self.pos * rhs,
+            uv: self.uv * rhs,
+            normal: self.normal * rhs,
+        }
+    }
+}
+
+impl Div<f64> for Vertex {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Self {
+            pos: self.pos / rhs,
+            uv: self.uv / rhs,
+            normal: self.normal / rhs,
+        }
+    }
+}
+
+pub struct ShaderSet {
+    vert_shader: Box<dyn Fn(Vertex) -> Vertex>,
+    frag_shader: Box<dyn Fn(Vertex) -> (char, color::Rgb)>,
+}
+
+impl ShaderSet {
+    pub fn new(
+        vert_shader: impl Fn(Vertex) -> Vertex + 'static,
+        frag_shader: impl Fn(Vertex) -> (char, color::Rgb) + 'static,
+    ) -> Self {
+        Self {
+            vert_shader: Box::new(vert_shader),
+            frag_shader: Box::new(frag_shader),
+        }
     }
 }

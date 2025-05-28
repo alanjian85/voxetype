@@ -13,7 +13,7 @@ pub mod time;
 
 pub use camera::Camera;
 pub use framebuffer::Framebuffer;
-pub use render::{Renderer, TRIANGLES, VERTICES, Vertex};
+pub use render::{Renderer, ShaderSet, TRIANGLES, VERTICES, Vertex};
 pub use time::Timer;
 
 const FULL_BLOCK_WIDTH: usize = 10;
@@ -61,11 +61,15 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         let proj_mat = DMat4::perspective_rh(45.0f64.to_radians(), aspect_ratio, 0.01, 1000.0);
         let view_mat = camera.view_mat();
         let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), timer.time());
-        renderer.set_model_mat(model_mat);
-        renderer.set_transform_mat(proj_mat * view_mat * model_mat);
+        let normal_mat = model_mat.inverse().transpose();
 
-        renderer.clear();
-        renderer.draw_triangles(&TRIANGLES[0..36], |uv, normal| {
+        let vert_shader = Box::new(move |vert: Vertex| {
+            let pos = proj_mat * view_mat * model_mat * vert.pos;
+            let uv = vert.uv;
+            let normal = normal_mat.transform_vector3(vert.normal);
+            Vertex::new(pos, uv, normal)
+        });
+        let frag_shader = Box::new(move |vert: Vertex| {
             let alphabet = ['#', '%', '&', '*', '@', '$', '0'];
             let palette = [
                 DVec3::new(0.73, 0.52, 0.36),
@@ -94,15 +98,18 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
                 [1, 2, 3, 0, 2, 3, 2, 3, 0, 0, 2, 1, 2, 2, 1, 1],
                 [1, 2, 0, 1, 1, 2, 4, 2, 1, 1, 2, 2, 1, 1, 2, 3],
             ];
-            let x = (uv.x * (texture[0].len() - 1) as f64).round() as usize;
-            let y = ((1.0 - uv.y) * (texture.len() - 1) as f64).round() as usize;
+            let x = (vert.uv.x * (texture[0].len() - 1) as f64).round() as usize;
+            let y = ((1.0 - vert.uv.y) * (texture.len() - 1) as f64).round() as usize;
             let texel = texture[x][y];
-            let color = palette[texel] * camera.pos().normalize().dot(normal).max(0.0);
+            let color = palette[texel] * camera.pos().normalize().dot(vert.normal).max(0.0);
             let r = (color.x * 255.0).round() as u8;
             let g = (color.y * 255.0).round() as u8;
             let b = (color.z * 255.0).round() as u8;
             (alphabet[texel], color::Rgb(r, g, b))
         });
+
+        renderer.clear();
+        renderer.draw_triangles(&TRIANGLES[0..36], &ShaderSet::new(vert_shader, frag_shader));
         renderer.present(&mut stdout)?;
     }
 

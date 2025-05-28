@@ -1,5 +1,6 @@
 use glam::{DMat4, DVec3};
 
+#[derive(Copy, Clone)]
 pub struct Camera {
     move_speed: f64,
     rotation_speed: f64,
