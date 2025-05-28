@@ -27,11 +27,15 @@ impl Renderer {
         self.vertex_buf = vertex_buf;
     }
 
-    pub fn draw_triangles(&mut self, indices: &[usize], shader_set: &ShaderSet) {
+    pub fn draw_triangles<V, F>(&mut self, indices: &[usize], vert_shader: &V, frag_shader: &F)
+    where
+        V: Fn(Vertex) -> Vertex,
+        F: Fn(Vertex) -> (char, color::Rgb),
+    {
         for chunk in indices.chunks_exact(3) {
-            let vert_a = (shader_set.vert_shader)(self.vertex_buf[chunk[0]]);
-            let vert_b = (shader_set.vert_shader)(self.vertex_buf[chunk[1]]);
-            let vert_c = (shader_set.vert_shader)(self.vertex_buf[chunk[2]]);
+            let vert_a = vert_shader(self.vertex_buf[chunk[0]]);
+            let vert_b = vert_shader(self.vertex_buf[chunk[1]]);
+            let vert_c = vert_shader(self.vertex_buf[chunk[2]]);
 
             let rw_a = 1.0 / vert_a.pos.w;
             let rw_b = 1.0 / vert_b.pos.w;
@@ -66,7 +70,7 @@ impl Renderer {
                     if det_a >= 0.0 && det_b >= 0.0 && det_c >= 0.0 {
                         let denom = rw_a * det_a + rw_b * det_b + rw_c * det_c;
                         let vert = (vert_a * det_a + vert_b * det_b + vert_c * det_c) / denom;
-                        let (glyph, color) = (shader_set.frag_shader)(vert);
+                        let (glyph, color) = frag_shader(vert);
                         self.framebuffer.write(x as usize, y as usize, glyph, color);
                     }
                 }
@@ -134,23 +138,6 @@ impl Div<f64> for Vertex {
             pos: self.pos / rhs,
             uv: self.uv / rhs,
             normal: self.normal / rhs,
-        }
-    }
-}
-
-pub struct ShaderSet {
-    vert_shader: Box<dyn Fn(Vertex) -> Vertex>,
-    frag_shader: Box<dyn Fn(Vertex) -> (char, color::Rgb)>,
-}
-
-impl ShaderSet {
-    pub fn new(
-        vert_shader: impl Fn(Vertex) -> Vertex + 'static,
-        frag_shader: impl Fn(Vertex) -> (char, color::Rgb) + 'static,
-    ) -> Self {
-        Self {
-            vert_shader: Box::new(vert_shader),
-            frag_shader: Box::new(frag_shader),
         }
     }
 }

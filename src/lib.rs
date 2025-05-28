@@ -13,7 +13,7 @@ pub mod time;
 
 pub use camera::Camera;
 pub use framebuffer::Framebuffer;
-pub use render::{Renderer, ShaderSet, TRIANGLES, VERTICES, Vertex};
+pub use render::{Renderer, TRIANGLES, Texture, VERTICES, Vertex};
 pub use time::Timer;
 
 const FULL_BLOCK_WIDTH: usize = 10;
@@ -45,6 +45,8 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
     let mut renderer = Renderer::new(framebuffer);
     renderer.set_vertex_buf(VERTICES.to_vec());
 
+    let texture = Texture::load("assets/textures/dirt.bin")?;
+
     let mut timer = Timer::new();
     let mut camera = Camera::new(50.0, 10.0, 5.0);
     'game_loop: loop {
@@ -63,53 +65,29 @@ pub fn run(width: usize, height: usize) -> Result<(), Box<dyn Error>> {
         let model_mat = DMat4::from_axis_angle(DVec3::new(1.0, 1.0, 1.0).normalize(), timer.time());
         let normal_mat = model_mat.inverse().transpose();
 
-        let vert_shader = Box::new(move |vert: Vertex| {
+        let vert_shader = |vert: Vertex| {
             let pos = proj_mat * view_mat * model_mat * vert.pos;
             let uv = vert.uv;
             let normal = normal_mat.transform_vector3(vert.normal);
             Vertex::new(pos, uv, normal)
-        });
-        let frag_shader = Box::new(move |vert: Vertex| {
-            let alphabet = ['#', '%', '&', '*', '@', '$', '0'];
-            let palette = [
-                DVec3::new(0.73, 0.52, 0.36),
-                DVec3::new(0.59, 0.42, 0.29),
-                DVec3::new(0.47, 0.33, 0.23),
-                DVec3::new(0.35, 0.24, 0.16),
-                DVec3::new(0.53, 0.53, 0.53),
-                DVec3::new(0.42, 0.42, 0.42),
-                DVec3::new(0.45, 0.35, 0.27),
-            ];
-            let texture = [
-                [0, 1, 1, 2, 2, 0, 1, 1, 2, 2, 3, 2, 2, 0, 2, 0],
-                [2, 1, 3, 2, 2, 1, 4, 3, 2, 0, 1, 2, 0, 1, 3, 3],
-                [0, 2, 2, 3, 0, 2, 2, 2, 0, 2, 2, 2, 3, 3, 0, 2],
-                [1, 5, 0, 2, 1, 3, 2, 0, 1, 1, 2, 1, 2, 0, 1, 2],
-                [1, 2, 1, 0, 3, 1, 2, 2, 1, 3, 2, 5, 2, 1, 3, 2],
-                [2, 3, 1, 1, 2, 1, 3, 3, 3, 2, 2, 3, 2, 2, 2, 1],
-                [0, 2, 2, 2, 4, 2, 2, 0, 0, 2, 0, 0, 2, 1, 2, 1],
-                [2, 2, 0, 0, 1, 1, 2, 2, 1, 3, 1, 1, 2, 2, 1, 1],
-                [1, 2, 2, 1, 2, 1, 2, 3, 2, 1, 1, 2, 2, 2, 3, 2],
-                [2, 1, 3, 2, 2, 3, 3, 2, 2, 2, 2, 2, 0, 0, 2, 1],
-                [2, 1, 2, 0, 0, 2, 0, 1, 3, 0, 0, 3, 1, 1, 4, 2],
-                [1, 2, 2, 1, 1, 0, 2, 1, 5, 1, 1, 2, 3, 1, 2, 3],
-                [2, 3, 1, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0],
-                [2, 1, 2, 2, 6, 2, 1, 1, 2, 3, 0, 3, 2, 0, 1, 1],
-                [1, 2, 3, 0, 2, 3, 2, 3, 0, 0, 2, 1, 2, 2, 1, 1],
-                [1, 2, 0, 1, 1, 2, 4, 2, 1, 1, 2, 2, 1, 1, 2, 3],
-            ];
-            let x = (vert.uv.x * (texture[0].len() - 1) as f64).round() as usize;
-            let y = ((1.0 - vert.uv.y) * (texture.len() - 1) as f64).round() as usize;
-            let texel = texture[x][y];
-            let color = palette[texel] * camera.pos().normalize().dot(vert.normal).max(0.0);
+        };
+        let frag_shader = |vert: Vertex| {
+            let (glyph, color) = texture.sample(vert.uv);
+            let color = DVec3::new(color.0 as f64, color.1 as f64, color.2 as f64) / 255.0;
+            let color = color
+                * vert
+                    .normal
+                    .normalize()
+                    .dot(camera.pos().normalize())
+                    .max(0.0);
             let r = (color.x * 255.0).round() as u8;
             let g = (color.y * 255.0).round() as u8;
             let b = (color.z * 255.0).round() as u8;
-            (alphabet[texel], color::Rgb(r, g, b))
-        });
+            (glyph, color::Rgb(r, g, b))
+        };
 
         renderer.clear();
-        renderer.draw_triangles(&TRIANGLES[0..36], &ShaderSet::new(vert_shader, frag_shader));
+        renderer.draw_triangles(&TRIANGLES[0..36], &vert_shader, &frag_shader);
         renderer.present(&mut stdout)?;
     }
 
